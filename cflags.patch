@@ -1,0 +1,14 @@
+Prefer to use the rpmbuild CFLAGS
+
+diff -ru nosync-1.0/Makefile nosync-1.0.new/Makefile
+--- nosync-1.0/Makefile	2014-07-05 10:05:29.000000000 -0700
++++ nosync-1.0.new/Makefile	2016-03-30 19:53:03.784102564 -0700
+@@ -1,7 +1,7 @@
+ prefix = /usr/local
+ libdir = $(prefix)/lib
+ OBJS = fsync.o open.o
+-CFLAGS = -O2 -g
++CFLAGS ?= -O3 -g
+ 
+ nosync.so: $(OBJS)
+ 	$(CC) -shared -fPIC -ldl -lpthread $(CFLAGS) -o $@ $+

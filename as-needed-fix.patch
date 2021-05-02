@@ -1,0 +1,15 @@
+To avoid the --as-needed removal of linking to libdl and libpthread, pass the -l
+options last during the link stage.
+
+diff -ru nosync-1.0/Makefile nosync-1.0.new/Makefile
+--- nosync-1.0/Makefile	2016-03-31 10:29:26.903721496 -0700
++++ nosync-1.0.new/Makefile	2016-03-31 10:30:23.767098355 -0700
+@@ -4,7 +4,7 @@
+ CFLAGS ?= -O2 -g
+ 
+ nosync.so: $(OBJS)
+-	$(CC) -shared -fPIC -ldl -lpthread $(CFLAGS) -o $@ $+
++	$(CC) -shared -fPIC $(CFLAGS) -o $@ $+ -ldl -lpthread
+ 
+ %.o: %.c
+ 	$(CC) -c -fPIC $(CFLAGS) -o $@ $+

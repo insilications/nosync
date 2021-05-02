@@ -1,0 +1,1 @@
+libdir=%{buildroot}/usr/lib64
