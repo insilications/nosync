@@ -1,0 +1,240 @@
+From 7f0ee0c0cf2a42de10d4ffbb8fa55cf6cc96097f Mon Sep 17 00:00:00 2001
+From: Francisco Boni <boboniboni@gmail.com>
+Date: Fri, 6 Aug 2021 03:47:39 -0300
+Subject: [PATCH 3/3] fsync() and fdatasync() check if the FD is valid
+
+---
+ .gitignore    |  1 +
+ Makefile      | 14 ++++++++---
+ README.md     |  7 ++++++
+ checkfd.c     | 24 +++++++++++++++++++
+ fsync.c       | 20 +++++++++++++---
+ open.c        |  2 +-
+ test_nosync.c | 65 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 7 files changed, 126 insertions(+), 7 deletions(-)
+ create mode 100644 checkfd.c
+ create mode 100644 test_nosync.c
+
+diff --git a/.gitignore b/.gitignore
+index 51bf945..4e10826 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,3 +1,4 @@
+ *~
+ *.o
+ nosync.so
++test_nosync
+diff --git a/Makefile b/Makefile
+index e4596a6..00a66ad 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,9 @@
++srcdir=.
+ prefix = /usr
+ libdir = $(prefix)/lib64
+-OBJS = fsync.o open.o
++OBJS = fsync.o open.o checkfd.o
+ CFLAGS ?= -Ofast
++LIBRARY = nosync.so
+ 
+ nosync.so: $(OBJS)
+ 	$(CC) -shared -fPIC $(CFLAGS) -o $@ $+ -ldl -lpthread
+@@ -9,9 +11,15 @@ nosync.so: $(OBJS)
+ %.o: %.c
+ 	$(CC) -c -fPIC $(CFLAGS) -o $@ $+
+ 
+-install: nosync.so
++install: $(LIBRARY)
+ 	install -d $(libdir)/nosync
+ 	install -p $< $(libdir)/nosync/
+ 
++test_nosync: test_nosync.c
++	$(CC) $(CFLAGS) -o $@ $+
++
++test: test_nosync $(LIBRARY)
++	LD_LIBRARY=$(srcdir)/$(LIBRARY) ./test_nosync
++
+ clean:
+-	@rm -f $(OBJS) nosync.so
++	@rm -f $(OBJS) nosync.so test_nosync
+diff --git a/README.md b/README.md
+index dd5c58a..0bb413f 100644
+--- a/README.md
++++ b/README.md
+@@ -17,6 +17,10 @@ Installation
+ 
+     make install prefix=/target/location
+ 
++Run tests
++---------
++
++    make test
+ 
+ Usage
+ -----
+@@ -35,4 +39,7 @@ nosync works by overloading the following functions:
+   * `open`,
+   * `open64`,
+   * `sync`,
++  * `syncfs`,
+   * `sync_file_range`.
++
++`fsync()`, `fdatasync()` and `syncfs()` check if the file descriptor is valid.
+diff --git a/checkfd.c b/checkfd.c
+new file mode 100644
+index 0000000..ed8fb83
+--- /dev/null
++++ b/checkfd.c
+@@ -0,0 +1,24 @@
++/*-
++ * Copyright (c) 2014-2021 Mikolaj Izdebski
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <unistd.h>
++
++int __nosync_check_fd(int fd)
++{
++    struct stat st;
++    return fstat(fd, &st);
++}
+diff --git a/fsync.c b/fsync.c
+index 1d51a45..034112a 100644
+--- a/fsync.c
++++ b/fsync.c
+@@ -1,5 +1,5 @@
+ /*-
+- * Copyright (c) 2014 Mikolaj Izdebski
++ * Copyright (c) 2014-2021 Mikolaj Izdebski
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -16,6 +16,8 @@
+ #include <errno.h>
+ #include <pthread.h>
+ 
++extern int __nosync_check_fd(int fd);
++
+ int __nosync_fsync()
+ {
+   pthread_testcancel();
+@@ -23,8 +25,20 @@ int __nosync_fsync()
+   return 0;
+ }
+ 
+-int fdatasync() __attribute__((alias("__nosync_fsync")));
+-int fsync() __attribute__((alias("__nosync_fsync")));
+ int msync() __attribute__((alias("__nosync_fsync")));
+ int sync() __attribute__((alias("__nosync_fsync")));
+ int sync_file_range() __attribute__((alias("__nosync_fsync")));
++
++int __nosync_fsync_fd(int fd)
++{
++  if (__nosync_check_fd(fd)) {
++    // __nosync_check_fd() sets errno
++    return -1;
++  }
++
++  return __nosync_fsync();
++}
++
++int fsync(int fd) __attribute__((alias("__nosync_fsync_fd")));
++int fdatasync(int fd) __attribute__((alias("__nosync_fsync_fd")));
++int syncfs(int fd) __attribute__((alias("__nosync_fsync_fd")));
+diff --git a/open.c b/open.c
+index f96f542..5450dda 100644
+--- a/open.c
++++ b/open.c
+@@ -1,5 +1,5 @@
+ /*-
+- * Copyright (c) 2014-2017 Mikolaj Izdebski
++ * Copyright (c) 2014-2021 Mikolaj Izdebski
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+diff --git a/test_nosync.c b/test_nosync.c
+new file mode 100644
+index 0000000..a5de95b
+--- /dev/null
++++ b/test_nosync.c
+@@ -0,0 +1,65 @@
++/*-
++ * Copyright (c) 2014-2021 Mikolaj Izdebski
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++#undef NDEBUG
++
++#include <assert.h>
++#include <errno.h>
++#include <fcntl.h>
++#include <stdio.h>
++#include <sys/stat.h>
++#include <sys/types.h>
++#include <unistd.h>
++
++// syncfs() is a Linux extension.
++// Just expect it to be there, it is provided by nosync on all platforms.
++extern  int syncfs(int fd);
++
++
++int ntest = 0;
++
++#define TEST(MSG) \
++    do { printf("Test " MSG "\n"); ntest++; } while (0)
++
++
++void test_invalid_fd(void)
++{
++    int invalid_fd;
++    int res;
++
++    invalid_fd = open("/etc/issue", O_RDONLY);
++    close(invalid_fd);
++
++    TEST("fsync(invalid_fd)");
++    res = fsync(invalid_fd);
++    assert(res < 0 && errno == EBADF);
++
++    TEST("fdatasync(invalid_fd)");
++    res = fdatasync(invalid_fd);
++    assert(res < 0 && errno == EBADF);
++
++    TEST("syncfs(invalid_fd)");
++    res = syncfs(invalid_fd);
++    assert(res < 0 && errno == EBADF);
++}
++
++
++int main(void)
++{
++    test_invalid_fd();
++    printf("\n");
++    printf("%i tests passed successfully!\n", ntest);
++    return 0;
++}
+-- 
+2.32.0
+
