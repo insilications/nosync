@@ -2,9 +2,11 @@
 # picked up automatically. One name per line, no whitespace.
 gcc
 gcc-dev
-git
-glibc
 gcc-dev32
 gcc-libgcc32
 gcc-libstdc++32
+git
+glibc
 glibc-dev32
+zstd-bin
+zstd-dev

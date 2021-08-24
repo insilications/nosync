@@ -1,3 +1,3 @@
 0001-As-needed-fix.patch
 0002-Eliminate-dependency-on-ELF-constructor-ordering.patch
-0003-fsync-and-fdatasync-check-if-the-FD-is-valid.patch
+#0003-fsync-and-fdatasync-check-if-the-FD-is-valid.patch
