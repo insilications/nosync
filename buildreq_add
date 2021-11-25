@@ -5,8 +5,8 @@ gcc-dev
 gcc-dev32
 gcc-libgcc32
 gcc-libstdc++32
-git
 glibc
 glibc-dev32
 zstd-bin
 zstd-dev
+sd

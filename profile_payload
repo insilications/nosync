@@ -27,3 +27,4 @@ cat test.txt | zstd -v -5 | zstd -v -d > test1.txt
 cat test.txt | zstd -v -1 | zstd -v -d > test2.txt
 cat test.txt | zstd -v -19 | zstd -v -d > test3.txt
 unset LD_PRELOAD
+make test V=1 VERBOSE=1
