@@ -5,7 +5,7 @@
 %define keepstatic 1
 Name     : nosync
 Version  : 1.6
-Release  : 306
+Release  : 307
 URL      : file:///aot/build/clearlinux/packages/nosync/nosync-v1.6.tar.gz
 Source0  : file:///aot/build/clearlinux/packages/nosync/nosync-v1.6.tar.gz
 Summary  : No detailed summary available
@@ -71,7 +71,7 @@ unset https_proxy
 unset no_proxy
 export SSL_CERT_FILE=/var/cache/ca-certs/anchors/ca-certificates.crt
 export LANG=C.UTF-8
-export SOURCE_DATE_EPOCH=1637800627
+export SOURCE_DATE_EPOCH=1638012218
 export GCC_IGNORE_WERROR=1
 export AR=gcc-ar
 export RANLIB=gcc-ranlib
@@ -253,7 +253,7 @@ make  %{?_smp_mflags}    V=1 VERBOSE=1
 popd
 
 %install
-export SOURCE_DATE_EPOCH=1637800627
+export SOURCE_DATE_EPOCH=1638012218
 rm -rf %{buildroot}
 pushd ../build32/
 %make_install32 libdir=%{buildroot}/usr/lib64 libdir=%{buildroot}/usr/lib32
