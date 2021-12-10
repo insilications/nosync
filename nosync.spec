@@ -5,7 +5,7 @@
 %define keepstatic 1
 Name     : nosync
 Version  : 1.6
-Release  : 307
+Release  : 501
 URL      : file:///aot/build/clearlinux/packages/nosync/nosync-v1.6.tar.gz
 Source0  : file:///aot/build/clearlinux/packages/nosync/nosync-v1.6.tar.gz
 Summary  : No detailed summary available
@@ -71,7 +71,7 @@ unset https_proxy
 unset no_proxy
 export SSL_CERT_FILE=/var/cache/ca-certs/anchors/ca-certificates.crt
 export LANG=C.UTF-8
-export SOURCE_DATE_EPOCH=1638012218
+export SOURCE_DATE_EPOCH=1639109828
 export GCC_IGNORE_WERROR=1
 export AR=gcc-ar
 export RANLIB=gcc-ranlib
@@ -162,15 +162,15 @@ export FFLAGS="${FFLAGS_GENERATE}"
 export FCFLAGS="${FCFLAGS_GENERATE}"
 export LDFLAGS="${LDFLAGS_GENERATE}"
 export LIBS="${LIBS_GENERATE}"
-make  %{?_smp_mflags}    V=1 VERBOSE=1 CFLAGS="${CFLAGS_GENERATE}" CXXFLAGS="${CXXFLAGS_GENERATE}" FFLAGS="${FFLAGS_GENERATE}" FCFLAGS="${FCFLAGS_GENERATE}" LDFLAGS="${LDFLAGS_GENERATE}" LIBS="${LIBS_GENERATE}"
+make  %{?_smp_mflags}    V=1 VERBOSE=1
 
 ## profile_payload start
 unset LD_LIBRARY_PATH
 unset LIBRARY_PATH
 export DISPLAY=:0
-export __GL_SYNC_TO_VBLANK=0
-export __GL_SYNC_DISPLAY_DEVICE=DFP-1
-export VDPAU_NVIDIA_SYNC_DISPLAY_DEVICE=DFP-1
+export __GL_SYNC_TO_VBLANK=1
+export __GL_SYNC_DISPLAY_DEVICE=HDMI-0
+export VDPAU_NVIDIA_SYNC_DISPLAY_DEVICE=HDMI-0
 export LANG=en_US.UTF-8
 export XDG_CONFIG_DIRS=/usr/share/xdg:/etc/xdg
 export XDG_SEAT=seat0
@@ -210,8 +210,8 @@ export CXXFLAGS="${CXXFLAGS_USE}"
 export FFLAGS="${FFLAGS_USE}"
 export FCFLAGS="${FCFLAGS_USE}"
 export LDFLAGS="${LDFLAGS_USE}"
-unset LIBS
-make  %{?_smp_mflags}    V=1 VERBOSE=1 CFLAGS="${CFLAGS_USE}" CXXFLAGS="${CXXFLAGS_USE}" FFLAGS="${FFLAGS_USE}" FCFLAGS="${FCFLAGS_USE}" LDFLAGS="${LDFLAGS_USE}" LIBS="${LIBS_GENERATE}"
+export LIBS="${LIBS_USE}"
+make  %{?_smp_mflags}    V=1 VERBOSE=1
 fi
 
 pushd ../build32/
@@ -247,13 +247,13 @@ unset LIBRARY_PATH
 unset CPATH="/usr/local/cuda/include"
 #
 export PATH="/usr/lib64/ccache/bin:/usr/local/cuda/bin:/usr/nvidia/bin:/usr/bin/haswell:/usr/bin:/usr/sbin"
-export ASFLAGS="${ASFLAGS}${ASFLAGS:+ }--32"
+export ASFLAGS="--32"
 ## altflags1_32 end
 make  %{?_smp_mflags}    V=1 VERBOSE=1
 popd
 
 %install
-export SOURCE_DATE_EPOCH=1638012218
+export SOURCE_DATE_EPOCH=1639109828
 rm -rf %{buildroot}
 pushd ../build32/
 %make_install32 libdir=%{buildroot}/usr/lib64 libdir=%{buildroot}/usr/lib32
